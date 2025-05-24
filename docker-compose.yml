@@ -1,0 +1,45 @@
+version: '3'
+services:
+  flink:
+    image: flink:1.18.0
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink
+    volumes:
+      - ./target:/opt/flink/usrlib
+      - ./data:/opt/flink/data
+      - ./log:/opt/flink/log
+    # Run container setup commands before starting the service
+    entrypoint: >
+      /bin/bash -c "
+        mkdir -p /opt/flink/log && 
+        chmod -R 777 /opt/flink/log && 
+        chmod -R 777 /opt/flink/data &&
+        /docker-entrypoint.sh jobmanager"
+
+  taskmanager:
+    image: flink:1.18.0
+    depends_on:
+      - flink
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=flink
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink
+        taskmanager.numberOfTaskSlots: 2
+    volumes:
+      - ./target:/opt/flink/usrlib
+      - ./data:/opt/flink/data
+      - ./log:/opt/flink/log
+    # Run container setup commands before starting the service
+    entrypoint: >
+      /bin/bash -c "
+        mkdir -p /opt/flink/log && 
+        chmod -R 777 /opt/flink/log && 
+        chmod -R 777 /opt/flink/data &&
+        /docker-entrypoint.sh taskmanager"
